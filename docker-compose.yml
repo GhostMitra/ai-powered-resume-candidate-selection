@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: talentmatch_api
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DB_NAME=resume_screening
+      - LM_STUDIO_BASE_URL=http://host.docker.internal:1234/v1
+      - LM_STUDIO_MODEL=nvidia/nemotron-3-nano-4b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7.0
+    container_name: talentmatch_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+    driver: local
